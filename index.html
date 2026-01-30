@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zero Escape: The Ultimate Treasure Hunt</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Courier New', monospace;
+  background: #000;
+  color: #0f0;
+  overflow-x: hidden;
+  transition: all 0.5s;
+}
+
+body.phase2 {
+  background: #1a0000;
+  color: #ff0000;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.screen {
+  display: none;
+  animation: fadeIn 0.5s;
+}
+
+.screen.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-5px, 5px); }
+  40% { transform: translate(5px, -5px); }
+  60% { transform: translate(-5px, -5px); }
+  80% { transform: translate(5px, 5px); }
+}
+
+.glitch {
+  animation: glitch 0.3s infinite;
+}
+
+h1 {
+  text-align: center;
+  font-size: 2.5em;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px currentColor;
+}
+
+.phase2 h1 {
+  color: #8b0000;
+}
+
+.narration {
+  background: rgba(0, 255, 0, 0.1);
+  border: 2px solid #0f0;
+  padding: 20px;
+  margin: 20px 0;
+  line-height: 1.6;
+  border-radius: 5px;
+}
+
+.phase2 .narration {
+  background: rgba(139, 0, 0, 0.1);
+  border-color: #8b0000;
+}
+
+.puzzle-area {
+  background: rgba(0, 255, 0, 0.05);
+  border: 1px solid #0f0;
+  /* padding: 30px; */
+  margin: 20px 0;
+  border-radius: 5px;
+
+  padding: 12px;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.phase2 .puzzle-area {
+  background: rgba(139, 0, 0, 0.05);
+  border-color: #8b0000;
+}
+
+button {
+  background: #0f0;
+  color: #000;
+  border: none;
+  padding: 12px 30px;
+  font-family: 'Courier New', monospace;
+  font-size: 1em;
+  cursor: pointer;
+  margin: 5px;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #0a0;
+  box-shadow: 0 0 15px #0f0;
+}
+
+.phase2 button {
+  background: #8b0000;
+  color: #fff;
+}
+
+.phase2 button:hover {
+  background: #a00;
+  box-shadow: 0 0 15px #8b0000;
+}
+
+input, select {
+  background: #000;
+  color: #0f0;
+  border: 2px solid #0f0;
+  padding: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 1em;
+  margin: 5px;
+}
+
+.phase2 input, .phase2 select {
+  background: #1a0000;
+  color: #ff0000;
+  border-color: #8b0000;
+}
+/* .grid {
+  display: grid;
+  gap: 6px;
+  justify-content: center;
+  margin: 20px auto;
+  grid-template-columns: repeat(var(--grid-size), var(--cell-size));
+} */
+.grid {
+  display: grid;
+  margin: 16px auto;
+  gap: 0;
+
+  /* KUNCI UTAMA */
+  grid-template-columns: repeat(9, clamp(32px, 9vmin, 48px));
+  grid-template-rows: repeat(9, clamp(32px, 9vmin, 48px));
+
+  width: fit-content;
+  max-width: 100%;
+}
+
+
+/* .cell {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid #0f0;
+  background: #000;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+} */
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: clamp(14px, 4vmin, 22px);
+  font-weight: bold;
+
+  border: 1.5px solid #0f0;
+  background: #000;
+  color: #0f0;
+
+  box-sizing: border-box;
+}
+
+/* Garis vertikal tebal */
+.cell.sub-right {
+  border-right: 3px solid #0f0;
+}
+
+/* Garis horizontal tebal */
+.cell.sub-bottom {
+  border-bottom: 3px solid #0f0;
+}
+
+.cell:hover {
+  background: rgba(0, 255, 0, 0.2);
+}
+
+.phase2 .cell {
+  border-color: #8b0000;
+}
+
+.phase2 .cell:hover {
+  background: rgba(139, 0, 0, 0.2);
+}
+
+.cell.laser-path { 
+  background: rgba(255, 0, 0, 0.3); 
+  border-color: #f00;
+}
+.cell.mirror { 
+  background: #0f0; 
+  color: #000; 
+  font-weight: bold; 
+  font-size: 2em;
+}
+.cell.target { 
+  background: #ff0; 
+  position: relative;
+}
+.cell.target::after {
+  content: '⭐';
+  font-size: 2em;
+}
+.cell.start {
+  background: #f00;
+  position: relative;
+}
+.cell.fixed {
+  background: #333;
+  color: #aaa;
+  cursor: not-allowed;
+  font-weight: bold;
+}
+.cell[contenteditable="true"]:focus {
+  outline: 2px solid #0f0;
+}
+.cell.red { background: #f00; }
+.cell.green { background: #0f0; }
+
+.controls {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.message {
+  text-align: center;
+  font-size: 1.2em;
+  margin: 15px 0;
+  min-height: 30px;
+}
+
+.error {
+  color: #f00;
+}
+
+.success {
+  color: #0f0;
+  text-shadow: 0 0 10px #0f0;
+}
+
+.phase2 .success {
+  color: #ff0;
+  text-shadow: 0 0 10px #ff0;
+}
+
+footer {
+  text-align: center;
+  margin-top: 50px;
+  padding: 20px;
+  border-top: 1px solid #0f0;
+}
+
+.phase2 footer {
+  border-top-color: #8b0000;
+}
+
+.transition-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  font-size: 2em;
+  text-align: center;
+  padding: 20px;
+}
+
+.transition-screen.active {
+  display: flex;
+}
+
+.qr-container {
+  text-align: center;
+  padding: 30px;
+}
+
+.qr-container img {
+  margin: 20px auto;
+  display: block;
+  border: 5px solid #0f0;
+}
+
+.phase2 .qr-container img {
+  border-color: #ff0;
+}
+
+.morse-display {
+  font-size: 3em;
+  text-align: center;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.valve-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+
+.valve {
+  width: 80px;
+  height: 80px;
+  border: 3px solid #8b0000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5em;
+  cursor: pointer;
+  background: #1a0000;
+  transition: all 0.3s;
+}
+
+.valve:hover {
+  background: #300;
+  box-shadow: 0 0 20px #8b0000;
+}
+
+.valve.clicked {
+  background: #8b0000;
+}
+
+.water-container {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin: 20px 0;
+}
+
+.jug {
+  text-align: center;
+}
+
+.jug-visual {
+  width: 80px;
+  height: 150px;
+  border: 3px solid #0f0;
+  position: relative;
+  margin: 10px auto;
+}
+
+.water-level {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background: #0af;
+  transition: height 0.3s;
+}
+
+/* === LASER PUZZLE GRID === */
+.laser-grid {
+  --cell-size: 48px;
+
+  display: grid;
+  grid-template-columns: repeat(6, 48px);
+  grid-template-rows: repeat(6, 48);
+  gap: 0;
+
+  margin: 16px auto;
+  width: fit-content;
+}
+
+.laser-grid .cell {
+  width: 48px;
+  height: 48px;
+  border: 1.5px solid #0f0;
+  background: #000;
+  color: #0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  position: relative;
+  cursor: pointer;
+}
+
+/* START */
+.cell.start {
+  background: red;
+}
+
+/* TARGET */
+.cell.target {
+  background: gold;
+}
+
+/* OBSTACLE */
+.cell.block {
+  background: #033;
+}
+
+/* MIRROR */
+.cell.mirror-slash::after {
+  content: '/';
+  font-size: 26px;
+  color: #0f0;
+
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.laser-grid .cell.mirror-backslash::after {
+  content: '\\';
+  font-size: 26px;
+  color: #0f0;
+
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* LASER PATH */
+.laser-grid .cell.laser-path {
+  background: #0f0;
+  color: #000;
+}
+
+
+
+/* === LEVEL 10 : LIGHTS OUT === */
+.lights-grid {
+  display: grid;
+  grid-template-columns: repeat(3, var(--cell-size));
+  grid-template-rows: repeat(3, var(--cell-size));
+  gap: 6px;
+
+  justify-content: center;
+  margin: 20px auto;
+}
+
+.lights-grid .cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-weight: bold;
+  font-size: clamp(14px, 4vmin, 20px);
+
+  border: 2px solid #f00;
+  cursor: pointer;
+}
+
+.lights-grid .cell.red {
+  background: #c00;
+  color: #fff;
+}
+
+.lights-grid .cell.green {
+  background: #0f0;
+  color: #000;
+}
+
+/* === CONSTRAINT STYLES (untuk Level 1 & 3) === */
+.constraints {
+  margin-bottom: 25px;
+}
+
+.constraint-item {
+  padding: 10px;
+  margin: 8px 0;
+  border-left: 3px solid #00ff88;
+  background: rgba(0, 255, 136, 0.05);
+  border-radius: 3px;
+  color: #0f0;
+}
+
+.constraint-item.false {
+  border-left-color: #ff4444;
+  background: rgba(255, 68, 68, 0.05);
+}
+
+.constraint-item.false::before {
+  content: "⚠ FALSE: ";
+  color: #ff4444;
+  font-weight: bold;
+}
+
+.input-area {
+  margin: 25px 0;
+}
+
+.input-area label {
+  display: block;
+  margin-bottom: 10px;
+  color: #0f0;
+  font-size: 1.1em;
+}
+
+.input-area input {
+  width: 100%;
+  padding: 15px;
+  background: #000;
+  border: 2px solid #0f0;
+  border-radius: 5px;
+  color: #0f0;
+  font-family: 'Courier New', monospace;
+  font-size: 1.2em;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+.input-area input:focus {
+  outline: none;
+  border-color: #0f0;
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Welcome Screen -->
+  <div id="welcome" class="screen active">
+    <h1>ZERO ESCAPE</h1>
+    <h2 style="text-align: center; margin-bottom: 40px;">The Ultimate Treasure Hunt</h2>
+    <div class="narration">
+      <p style="font-size: 1.2em; text-align: center;">
+        Selamat datang di permainan teka-teki yang akan menguji batas logika dan keberanianmu.
+      </p>
+      <p style="text-align: center; margin-top: 20px;">
+        Kamu akan melewati 10 level puzzle yang berbeda. Setelah selesai, ia akan membawamu menuju hal yang kamu cari.
+      </p>
+      <p style="text-align: center; margin-top: 20px; color: #ff0;">
+        Ingat: Progresmu akan tersimpan. Jangan tutup tab ini atau kamu akan kehilangan segalanya.
+      </p>
+    </div>
+    <div class="controls">
+      <button onclick="startGame()">MULAI PERMAINAN</button>
+    </div>
+  </div>
+
+  <!-- Level 1: SERVER ARRANGEMENT (dari QUIZ_LOGIKA Stage 1) -->
+  <div id="level1" class="screen">
+    <h1>LEVEL 1: SERVER ARRANGEMENT</h1>
+    <div class="narration">
+      Kesadaranmu mulai pulih. Kamu berada di ruangan server dengan 5 rak (A,B,C,D,E) yang harus disusun dengan urutan tertentu. Sebuah suara mekanik bergema: "Protokol penguncian aktif. Susun server dengan benar untuk membebaskan kunci magnetik pertama."
+    </div>
+    <div class="puzzle-area">
+      <div class="constraints">
+        <div class="constraint-item">D harus berada di posisi pertama</div>
+        <div class="constraint-item">A harus berada tepat setelah D dan sebelum C</div>
+        <div class="constraint-item false">C harus berada di posisi kedua</div>
+        <div class="constraint-item">B harus berada setelah D (tapi boleh ada server lain di antaranya)</div>
+        <div class="constraint-item">E harus berada di posisi terakhir (kelima)</div>
+      </div>
+      <div class="input-area">
+        <label>Masukkan urutan server (format: ABCDE):</label>
+        <input type="text" id="input1" maxlength="5" placeholder="?????" autocomplete="off">
+      </div>
+      <div class="controls">
+        <button onclick="validateStage(1)">VALIDATE</button>
+        <button onclick="resetInput(1)">RESET</button>
+      </div>
+      <div class="message" id="msg1"></div>
+    </div>
+  </div>
+
+  <!-- Level 2: Gaulem Memory -->
+  <div id="level2" class="screen">
+    <h1>LEVEL 2: GAULEM MEMORY</h1>
+    <div class="narration">
+      Sesosok robot humanoid—Gaulem—duduk mematung di suduk ruangan. Chip memorinya rusak akibat lonjakan arus. Kamu harus menyambungkan kembali logika aritmatikanya sebelum sistem pendukung kehidupan di ruangan ini mati total.
+    </div>
+    <div class="puzzle-area">
+      <p style="text-align: center; font-size: 1.2em;">Temukan nilai A, B, C, dan D:</p>
+      <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">(A × B) + (C × D) = 71</p>
+      <p style="text-align: center; font-size: 1.3em; margin: 15px 0;">(A + C) × (B + D) = 132</p>
+      <p style="text-align: center; font-size: 0.9em;">A, B, C, D adalah angka 1-9 dan semuanya berbeda</p>
+      <p style="text-align: center; font-size: 0.85em; color: #0a0; margin-top: 10px;">PETUNJUK: A dan C adalah bilangan ganjil. B > D.</p>
+      <div class="controls">
+        <input type="number" id="valA" min="1" max="9" placeholder="A">
+        <input type="number" id="valB" min="1" max="9" placeholder="B">
+        <input type="number" id="valC" min="1" max="9" placeholder="C">
+        <input type="number" id="valD" min="1" max="9" placeholder="D">
+        <button onclick="checkGaulem()">VERIFIKASI</button>
+      </div>
+      <div class="message" id="gaulem-msg"></div>
+    </div>
+  </div>
+
+  <!-- LEVEL 3: MATRIX DECRYPTION (dari QUIZ_LOGIKA Stage 2) -->
+  <div id="level3" class="screen">
+    <h1>LEVEL 3: MATRIX DECRYPTION</h1>
+    <div class="narration">
+      <p>Grid 3x3 dengan angka 1-9. Setiap baris, kolom, dan diagonal memiliki aturan tertentu. SATU constraint adalah FALSE.</p>
+      <pre style="color: #0f0; margin-top: 10px; font-size: 1.2em; text-align: center;">
+    [2] [9] [4]
+    [?] [5] [?]
+    [6] [1] [?]
+      </pre>
+    </div>
+    <div class="puzzle-area">
+      <div class="constraints">
+        <div class="constraint-item">Semua angka 1-9 digunakan sekali</div>
+        <div class="constraint-item">Diagonal utama (2,5,?) berjumlah 15</div>
+        <div class="constraint-item">Baris tengah berjumlah 18</div>
+        <div class="constraint-item false">Kolom pertama (2,?,6) berjumlah 15</div>
+        <div class="constraint-item">Kolom ketiga (4,?,?) berjumlah 18</div>
+        <div class="constraint-item">Angka yang hilang diurutkan: yang terkecil, tengah, terbesar</div>
+      </div>
+      <div class="input-area">
+        <label>Masukkan 3 angka yang hilang (format: ABC, contoh: 378):</label>
+        <input type="text" id="input2" maxlength="3" placeholder="???" autocomplete="off">
+      </div>
+      <div class="controls">
+        <button onclick="validateStage(2)">VALIDATE</button>
+        <button onclick="resetInput(2)">RESET</button>
+      </div>
+      <div class="message" id="msg2"></div>
+    </div>
+  </div>
+
+
+  <!-- Level 4: Laboratory Mixing -->
+  <div id="level4" class="screen">
+    <h1>LEVEL 4: LABORATORY MIXING</h1>
+    <div class="narration">
+      Meja laboratorium ini dipenuhi tabung kimia. Untuk membuka pintu berikutnya, kamu harus menciptakan cairan penetral dengan volume yang sangat presisi. Tidak boleh kurang, tidak boleh lebih. Ketelitian adalah satu-satunya temanmu saat ini.
+    </div>
+    <div class="puzzle-area">
+      <p style="text-align: center;">Gunakan wadah 3L dan 5L untuk mendapatkan tepat 4L di salah satu wadah</p>
+      <div class="water-container">
+        <div class="jug">
+          <div class="jug-visual">
+            <div class="water-level" id="jug3-water"></div>
+          </div>
+          <div>Wadah 3L: <span id="jug3-amount">0</span>L</div>
+          <button onclick="fillJug(3)">ISI</button>
+          <button onclick="emptyJug(3)">KOSONGKAN</button>
+        </div>
+        <div class="jug">
+          <div class="jug-visual">
+            <div class="water-level" id="jug5-water"></div>
+          </div>
+          <div>Wadah 5L: <span id="jug5-amount">0</span>L</div>
+          <button onclick="fillJug(5)">ISI</button>
+          <button onclick="emptyJug(5)">KOSONGKAN</button>
+        </div>
+      </div>
+      <div class="controls">
+        <button onclick="pour(3, 5)">TUANG 3L → 5L</button>
+        <button onclick="pour(5, 3)">TUANG 5L → 3L</button>
+        <button onclick="checkWater()">CEK SOLUSI</button>
+      </div>
+      <div class="message" id="water-msg"></div>
+    </div>
+  </div>
+
+  <!-- Level 5: Q-Room Dice -->
+  <div id="level5" class="screen">
+    <h1>LEVEL 5: Q-ROOM SEQUENCE</h1>
+    <div class="narration">
+      Ruangan terakhir di fasilitas ini. Monitor besar menampilkan pola angka yang terus berubah. Ini bukan sekadar deret angka; ini adalah ujian logika murni. Temukan angka yang hilang, dan bersiaplah untuk... SHIFT.
+    </div>
+    <div class="puzzle-area">
+      <p style="text-align: center; font-size: 1.3em; margin: 20px 0;">Deret Fibonacci Modifikasi:</p>
+      <p style="text-align: center; font-size: 1.5em; margin: 20px 0;">2, 3, 5, 8, 13, ?, 34</p>
+      <p style="text-align: center; font-size: 1.3em; margin: 20px 0;">Deret Pangkat:</p>
+      <p style="text-align: center; font-size: 1.5em; margin: 20px 0;">1, 4, 9, 16, ?, 36</p>
+      <p style="text-align: center; font-size: 0.9em; color: #0a0;">PETUNJUK: Temukan pola. Fibonacci: setiap angka = jumlah 2 angka sebelumnya.<br>Pangkat: 1², 2², 3², 4², ...?</p>
+      <p style="text-align: center; font-size: 0.9em; margin-top: 15px;">Masukkan JUMLAH kedua angka yang hilang:</p>
+      <div class="controls">
+        <input type="number" id="seqAnswer" placeholder="Jumlah kedua angka">
+        <button onclick="checkSequence()">JAWAB</button>
+      </div>
+      <div class="message" id="seq-msg"></div>
+    </div>
+  </div>
+
+  <!-- Transition Screen -->
+  <div id="transition" class="transition-screen">
+    <div class="glitch">
+      <div style="color: #f00; font-size: 1.5em;">SHIFTING TO 1912...</div>
+      <div style="margin: 30px 0;">GIGANTIC STEAMSHIP</div>
+      <div style="font-size: 0.8em;">Fasilitas Rhizome menghilang, digantikan oleh bau kayu lapuk dan karat.</div>
+      <div style="margin-top: 30px; font-size: 0.8em;">Selesaikan ini atau tenggelam bersama sejarah.</div>
+      <div style="margin-top: 30px; font-size: 0.8em;">Refresh halaman untuk melanjutkan.</div>
+    </div>
+  </div>
+
+  <!-- Level 6: Digital Root -->
+  <div id="level6" class="screen">
+    <h1>LEVEL 6: CRYPTOGRAPHIC CIPHER</h1>
+    <div class="narration">
+      Layar berkedip hebat. Kamu mencium bau garam laut. Di pintu depan, terdapat pesan terenkripsi dengan cipher Caesar. Dekripsi pesan ini untuk membuka pintu, atau biarkan dirimu terkunci selamanya dalam kapal yang tenggelam.
+    </div>
+    <div class="puzzle-area">
+      <p style="text-align: center; font-size: 1.2em; margin: 20px 0;">Pesan Terenkripsi:</p>
+      <p style="text-align: center; font-size: 1.5em; margin: 20px 0; color: #8b0000; font-weight: bold;">RFPNCR</p>
+      <p style="text-align: center; font-size: 0.9em;">Caesar Cipher dengan pergeseran 13 (ROT13)</p>
+      <p style="text-align: center; font-size: 0.85em; color: #a00; margin-top: 10px;">PETUNJUK: A→N, B→O, C→P, ... M→Z, N→A, O→B, ... Z→M</p>
+      <p style="text-align: center; font-size: 0.85em; margin-top: 5px;">Setiap huruf digeser 13 posisi dalam alfabet</p>
+      <div class="controls">
+        <input type="text" id="cipherAnswer" placeholder="Masukkan kata hasil dekripsi" style="width: 250px;">
+        <button onclick="checkCipher()">DEKRIPSI</button>
+      </div>
+      <div class="message" id="cipher-msg"></div>
+    </div>
+  </div>
+
+  <!-- Level 7: Captain's Morse -->
+  <div id="level7" class="screen">
+    <h1>LEVEL 7: CAPTAIN'S MORSE</h1>
+    <div class="narration">
+      Suara ketukan logam terdengar dari balik dinding. Tit-tat-tit. Ini adalah kode Morse dari masa lalu yang terlupakan. Perhatikan baik-baik kedipan lampu darurat di atas kepala. Pesan ini adalah satu-satunya navigasi yang kamu miliki.
+    </div>
+    <div class="puzzle-area">
+      <div class="morse-display" id="morseDisplay">●</div>
+      <p style="text-align: center;">Perhatikan pola kedipan lampu di atas</p>
+      <p style="text-align: center; font-size: 0.9em;">● = dit (pendek), ▬ = dah (panjang), | = pemisah huruf</p>
+      <p style="text-align: center; font-size: 0.85em; color: #a00; margin-top: 10px;">TABEL REFERENSI MORSE CODE:</p>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; max-width: 600px; margin: 15px auto; font-size: 0.8em; text-align: left;">
+        <div>A = ●▬</div>
+        <div>B = ▬●●●</div>
+        <div>C = ▬●▬●</div>
+        <div>D = ▬●●</div>
+        <div>E = ●</div>
+        <div>F = ●●▬●</div>
+        <div>G = ▬▬●</div>
+        <div>H = ●●●●</div>
+        <div>I = ●●</div>
+        <div>J = ●▬▬▬</div>
+        <div>K = ▬●▬</div>
+        <div>L = ●▬●●</div>
+        <div>M = ▬▬</div>
+        <div>N = ▬●</div>
+        <div>O = ▬▬▬</div>
+        <div>P = ●▬▬●</div>
+        <div>Q = ▬▬●▬</div>
+        <div>R = ●▬●</div>
+        <div>S = ●●●</div>
+        <div>T = ▬</div>
+        <div>U = ●●▬</div>
+        <div>V = ●●●▬</div>
+        <div>W = ●▬▬</div>
+        <div>X = ▬●●▬</div>
+        <div>Y = ▬●▬▬</div>
+        <div>Z = ▬▬●●</div>
+      </div>
+      <div class="controls">
+        <button onclick="playMorse()">PUTAR KODE MORSE</button>
+        <input type="text" id="morseAnswer" placeholder="Ketik kata yang dimaksud" style="width: 200px;">
+        <button onclick="checkMorse()">JAWAB</button>
+      </div>
+      <div class="message" id="morse-msg"></div>
+    </div>
+  </div>
+
+  <!-- Level 8: Binary Decoder -->
+  <div id="level8" class="screen">
+    <h1>LEVEL 8: BINARY DECODER</h1>
+    <div class="narration">
+      Kamu masuk ke ruang kerja Kapten. Sebuah brankas kuno menantimu. Panel digital menampilkan kode biner yang harus kamu konversi menjadi huruf untuk membuka kunci. Setiap 8 digit biner mewakili 1 huruf.
+    </div>
+    <div class="puzzle-area">
+      <p style="text-align: center; font-size: 1.2em;">Dekode pesan biner berikut:</p>
+      <div style="background: #300; padding: 20px; margin: 20px auto; max-width: 500px; border: 2px solid #8b0000;">
+        <p style="text-align: center; font-size: 1.3em; margin: 10px 0; font-family: monospace;">01000100</p>
+        <p style="text-align: center; font-size: 1.3em; margin: 10px 0; font-family: monospace;">01001111</p>
+        <p style="text-align: center; font-size: 1.3em; margin: 10px 0; font-family: monospace;">01001111</p>
+        <p style="text-align: center; font-size: 1.3em; margin: 10px 0; font-family: monospace;">01010010</p>
+      </div>
+      <p style="text-align: center; font-size: 0.85em; color: #a00; margin-top: 15px;">PETUNJUK KONVERSI BINER KE ASCII:</p>
+      <p style="text-align: center; font-size: 0.8em; margin: 5px 0;">1. Ubah setiap 8-bit biner ke desimal</p>
+      <p style="text-align: center; font-size: 0.8em; margin: 5px 0;">2. PETUNJUK: 0100 berarti HURUF BESAR</p>
+      <p style="text-align: center; font-size: 0.8em; margin: 5px 0;">3. 0001 = A | 0010 = B | 0011 = C | 0100 = D | 0101 = E | 0110 = F</p>
+      <p style="text-align: center; font-size: 0.8em; margin: 5px 0; color: #ff0;">Sisanya hanya urutan alfabet</p>
+      <div class="controls">
+        <input type="text" id="binaryAnswer" placeholder="Kata hasil dekode" style="width: 200px;">
+        <button onclick="checkBinary()">BUKA BRANKAS</button>
+      </div>
+      <div class="message" id="binary-msg"></div>
+    </div>
+  </div>
+
+  <!-- Level 9: Archive Deduction -->
+<div id="level9" class="screen">
+  <h1>LEVEL 9: ARCHIVE SUDOKU</h1>
+
+  <div class="narration">
+    Selamat datang di arsip data. Rak-rak ini menyimpan rahasia dunia,
+    namun dikunci oleh enkripsi logika tingkat tinggi.
+    Gunakan deduksimu untuk menyusun pola numerik yang benar.
+  </div>
+
+  <div class="puzzle-area">
+    <p style="text-align:center;margin-bottom:8px;">
+      Isi grid <strong>9×9</strong> dengan angka <strong>1–9</strong>
+    </p>
+    <p style="text-align:center;font-size:0.9em;">
+      Setiap <strong>BARIS</strong>, <strong>KOLOM</strong>,
+      dan <strong>KOTAK 3×3</strong> harus berisi angka 1–9 tanpa pengulangan
+    </p>
+    <p style="text-align:center;font-size:0.85em;color:#0a0;margin:10px 0;">
+      Sel abu-abu sudah terisi dan tidak bisa diubah
+    </p>
+
+    <div class="grid" id="archiveGrid"></div>
+
+    <div class="controls">
+      <button onclick="checkArchive()">VERIFIKASI ARSIP</button>
+      <button onclick="resetArchive()">RESET</button>
+    </div>
+
+    <div class="message" id="archive-msg"></div>
+  </div>
+</div>
+
+
+  <!-- Level 10: Laboratory Lights Out -->
+  <div id="level10" class="screen">
+    <h1>LEVEL 10: LABORATORY 'LIGHTS OUT'</h1>
+    <div class="narration">
+      Ini dia... ruangan terakhir. Biohazard terdeteksi. Monitor besar menunjukkan grid sel A1 hingga C3 yang menyala merah membara. Netralkan semua sel menjadi hijau untuk memurnikan udara. Berhasil, dan kamu akan mendapatkan kunci keluar.
+    </div>
+    <div class="puzzle-area">
+      <p style="text-align: center;">Klik sel untuk membalikkan warna sel tersebut dan tetangganya (atas/bawah/kiri/kanan)</p>
+      <p style="text-align: center; margin: 10px 0;">Target: Semua sel HIJAU</p>
+      <p style="text-align: center; font-size: 0.85em; color: #a00; margin: 5px 0;">💡 HINT: Klik sel pojok terlebih dahulu untuk strategi yang efektif</p>
+      <div style="text-align: center; margin: 10px 0;">
+        <div style="display: inline-block; margin: 0 20px;">
+          <div style="margin-bottom: 5px;"> </div>
+          <div>1 2 3</div>
+        </div>
+      </div>
+      <div class="lights-grid" id="lightsGrid"></div>
+      <div class="controls">
+        <button onclick="resetLights()">RESET GRID</button>
+      </div>
+      <div class="message" id="lights-msg"></div>
+    </div>
+  </div>
+
+  <!-- Victory Screen -->
+    <!-- VICTORY SCREEN -->
+    <div id="victory" class="screen">
+      <div class="victory-content">
+        <h1>🎉 SELAMAT! 🎉</h1>
+        
+        <div class="victory-message">
+          <p>Anda telah menyelesaikan semua 10 puzzle!</p>
+          <p>Pintu keluar terbuka...</p>
+          <p>Cahaya menyilaukan mata kalian setelah sekian lama dalam kegelapan.</p>
+          <p><strong>KALIAN BERHASIL KELUAR DARI NONARY GAME!</strong></p>
+        </div>
+  
+        <div class="final-code">
+          KATA KUNCI: Xīn
+        </div>
+  
+        <div class="victory-message">
+          <p>PETUNJUK LOKASI TERAKHIR!</p>
+          <p style="font-size: 0.9em; margin-top: 20px; opacity: 0.8;">
+            "Aku dikenal sebagai bunglon bangunan.
+            Kursi-kursiku sering datang dan pergi.
+            Disebut satu fungsi, aku tidak cukup. Disebut seribu fungsi, aku bersedia.
+            Tempat apa yang kumaksud?"."<br>
+          </p>
+        </div>
+      </div>
+    </div>
+  
+
+  <footer>
+    <button onclick="resetProgress()">RESET PROGRESS</button>
+    <p style="margin-top: 10px; font-size: 0.9em;">Game Progress: Level <span id="progressDisplay">1</span>/10</p>
+  </footer>
+</div>
+
+<script>
+  // ============================================
+  // KONFIGURASI UTAMA
+  // ============================================
+  const SECRET_LINK = "https://drive.google.com/file/d/1MLAm4NRlRwSV4Gezg34dyv4CHop_XDf2/view?usp=sharing";
+  
+  // ============================================
+  // STATE MANAGEMENT
+  // ============================================
+  var currentLevel = 0; // Mulai dari 0 (welcome screen)
+  var gameState = {
+    archiveGrid: Array(81).fill(''),
+    waterJug3: 0,
+    waterJug5: 0,
+    lightsGrid: []
+  };
+  
+  // ============================================
+  // UTILITY FUNCTIONS
+  // ============================================
+  function showMessage(id, text, type = '') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'message';
+    if (type) el.classList.add(type);
+  }
+  
+  // ============================================
+  // INITIALIZATION
+  // ============================================
+  function init() {
+    const saved = localStorage.getItem('currentLevel');
+    if (saved) {
+      currentLevel = parseInt(saved);
+      if (currentLevel === 0) {
+        showScreen('welcome');
+      } else {
+        if (currentLevel > 5) {
+          document.body.classList.add('phase2');
+        }
+        showScreen('level' + currentLevel);
+        
+        // Auto-init untuk level yang membutuhkan (dengan delay agar DOM sudah ready)
+        setTimeout(() => {
+          if (currentLevel === 9) initArchive();
+          if (currentLevel === 10) initLights();
+        }, 100);
+      }
+    } else {
+      // Jika belum ada progress, mulai dari welcome screen
+      currentLevel = 0;
+      showScreen('welcome');
+    }
+    updateProgress();
+  }
+  
+  function startGame() {
+    currentLevel = 1;
+    saveProgress();
+    showScreen('level1');
+  }
+  
+  function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const screen = document.getElementById(screenId);
+    if (screen) screen.classList.add('active');
+  }
+  
+  function saveProgress() {
+    localStorage.setItem('currentLevel', currentLevel);
+    updateProgress();
+  }
+  
+  function updateProgress() {
+    const el = document.getElementById('progressDisplay');
+    if (el) el.textContent = currentLevel;
+  }
+  
+  function nextLevel() {
+    currentLevel++;
+    
+    if (currentLevel === 6) {
+      // Transition ke Phase 2
+      saveProgress();
+      document.body.classList.add('phase2');
+      showScreen('transition');
+      setTimeout(() => {
+        showScreen('level6');
+      }, 4000);
+    } else if (currentLevel <= 10) {
+      saveProgress();
+      showScreen('level' + currentLevel);
+      
+      // Auto-init untuk level yang membutuhkan
+      if (currentLevel === 9) {
+        setTimeout(() => initArchive(), 100); // Delay sedikit agar screen sudah render
+      }
+      if (currentLevel === 10) {
+        setTimeout(() => initLights(), 100);
+      }
+    } else {
+      // Game selesai, jangan save progress
+      showVictory();
+    }
+  }
+  
+  function resetProgress() {
+    if (confirm('Yakin ingin mereset semua progress?')) {
+      localStorage.clear();
+      location.reload();
+    }
+  }
+  
+  // ============================================
+  // LEVEL 1: SERVER ARRANGEMENT (dari QUIZ_LOGIKA Stage 1)
+  // ============================================
+  function validateStage(stage) {
+    const solutions = {
+      1: "DACBE", // D pertama, A setelah D sebelum C, C tidak kedua (FALSE), B setelah D, E terakhir
+      2: "378"    // Missing numbers untuk Matrix Decryption
+    };
+    
+    const input = document.getElementById(`input${stage}`);
+    const message = document.getElementById(`msg${stage}`);
+    const answer = input.value.toUpperCase().trim();
+    
+    message.className = 'message';
+    message.textContent = '';
+    
+    if (answer === solutions[stage]) {
+      message.className = 'message success';
+      message.textContent = '✓ CORRECT! Proceeding to next level...';
+      setTimeout(nextLevel, 2000);
+    } else {
+      message.className = 'message error';
+      message.textContent = '✗ INCORRECT! Try again...';
+      setTimeout(() => {
+        message.className = 'message';
+      }, 3000);
+    }
+  }
+  
+  function resetInput(stage) {
+    const input = document.getElementById(`input${stage}`);
+    const message = document.getElementById(`msg${stage}`);
+    input.value = '';
+    message.className = 'message';
+    message.textContent = '';
+    input.focus();
+  }
+  
+  // ============================================
+  // LEVEL 2: GAULEM MEMORY
+  // ============================================
+  function checkGaulem() {
+    const a = parseInt(document.getElementById('valA').value);
+    const b = parseInt(document.getElementById('valB').value);
+    const c = parseInt(document.getElementById('valC').value);
+    const d = parseInt(document.getElementById('valD').value);
+    
+    if (isNaN(a) || isNaN(b) || isNaN(c) || isNaN(d)) {
+      showMessage('gaulem-msg', 'Masukkan semua nilai!', 'error');
+      return;
+    }
+    
+    const values = [a, b, c, d];
+    const unique = new Set(values);
+    if (unique.size !== 4) {
+      showMessage('gaulem-msg', 'Semua nilai harus berbeda!', 'error');
+      return;
+    }
+    
+    if (a % 2 === 0 || c % 2 === 0) {
+      showMessage('gaulem-msg', 'A dan C harus bilangan ganjil!', 'error');
+      return;
+    }
+    
+    if (b <= d) {
+      showMessage('gaulem-msg', 'B harus lebih besar dari D!', 'error');
+      return;
+    }
+    
+    const eq1 = (a * b) + (c * d);
+    const eq2 = (a + c) * (b + d);
+    
+    if (eq1 === 59 && eq2 === 132) {
+      showMessage('gaulem-msg', 'MEMORY RESTORED! Gaulem bangkit kembali...', 'success');
+      setTimeout(nextLevel, 2000);
+    } else {
+      showMessage('gaulem-msg', `Perhitungan salah. (A×B)+(C×D)=${eq1}, (A+C)×(B+D)=${eq2}`, 'error');
+    }
+  }
+  
+   // ============================================
+  // LEVEL 3: MATRIX DECRYPTION (dari QUIZ_LOGIKA Stage 2)
+  // ============================================
+  // Validasi dilakukan oleh fungsi validateStage(2) yang sudah didefinisikan di Level 1
+  
+  // ============================================
+  // LEVEL 4: LABORATORY MIXING
+  // ============================================
+  function updateWaterDisplay() {
+    document.getElementById('jug3-water').style.height = (gameState.waterJug3 / 3 * 100) + '%';
+    document.getElementById('jug5-water').style.height = (gameState.waterJug5 / 5 * 100) + '%';
+    document.getElementById('jug3-amount').textContent = gameState.waterJug3;
+    document.getElementById('jug5-amount').textContent = gameState.waterJug5;
+  }
+  
+  function fillJug(size) {
+    if (size === 3) gameState.waterJug3 = 3;
+    if (size === 5) gameState.waterJug5 = 5;
+    updateWaterDisplay();
+  }
+  
+  function emptyJug(size) {
+    if (size === 3) gameState.waterJug3 = 0;
+    if (size === 5) gameState.waterJug5 = 0;
+    updateWaterDisplay();
+  }
+  
+  function pour(from, to) {
+    if (from === 3 && to === 5) {
+      const space = 5 - gameState.waterJug5;
+      const amount = Math.min(gameState.waterJug3, space);
+      gameState.waterJug3 -= amount;
+      gameState.waterJug5 += amount;
+    } else if (from === 5 && to === 3) {
+      const space = 3 - gameState.waterJug3;
+      const amount = Math.min(gameState.waterJug5, space);
+      gameState.waterJug5 -= amount;
+      gameState.waterJug3 += amount;
+    }
+    updateWaterDisplay();
+  }
+  
+  function checkWater() {
+    if (gameState.waterJug3 === 4 || gameState.waterJug5 === 4) {
+      showMessage('water-msg', 'VOLUME PRESISI TERCAPAI!', 'success');
+      setTimeout(nextLevel, 2000);
+    } else {
+      showMessage('water-msg', 'Belum mencapai 4L.', 'error');
+    }
+  }
+  
+  // ============================================
+  // LEVEL 5: Q-ROOM SEQUENCE
+  // ============================================
+  function checkSequence() {
+    const answer = parseInt(document.getElementById('seqAnswer').value);
+    if (answer === 46) {
+      showMessage('seq-msg', 'POLA DITEMUKAN!', 'success');
+      setTimeout(nextLevel, 2000);
+    } else {
+      showMessage('seq-msg', 'Jawaban salah.', 'error');
+    }
+  }
+  
+  // ============================================
+  // LEVEL 6: CRYPTOGRAPHIC CIPHER
+  // ============================================
+  function checkCipher() {
+    const answer = document.getElementById('cipherAnswer').value.toUpperCase();
+    if (answer === 'ESCAPE') {
+      showMessage('cipher-msg', 'DEKRIPSI BERHASIL!', 'success');
+      setTimeout(nextLevel, 2000);
+    } else {
+      showMessage('cipher-msg', 'Dekripsi salah.', 'error');
+    }
+  }
+  
+  // ============================================
+  // LEVEL 7: CAPTAIN'S MORSE
+  // ============================================
+  function playMorse() {
+    const display = document.getElementById('morseDisplay');
+    const morseCode = ['●▬●●','|','●●','|','▬▬●','|','●●●●','|','▬','|','●●●●','|','▬▬▬','|','●●▬','|','●●●','|','●'];
+    let index = 0;
+    
+    const interval = setInterval(() => {
+      if (index >= morseCode.length) {
+        clearInterval(interval);
+        display.textContent = '●';
+        showMessage('morse-msg', 'Kode selesai diputar.', 'success');
+        return;
+      }
+      display.textContent = morseCode[index];
+      index++;
+    }, 900);
+  }
+  
+  function checkMorse() {
+    const answer = document.getElementById('morseAnswer').value.toUpperCase();
+    if (answer === 'LIGHTHOUSE') {
+      showMessage('morse-msg', 'KODE DITERJEMAHKAN!', 'success');
+      setTimeout(nextLevel, 2000);
+    } else {
+      showMessage('morse-msg', `Terjemahan salah (Anda: ${answer}).`, 'error');
+    }
+  }
+  
+  // ============================================
+  // LEVEL 8: BINARY DECODER
+  // ============================================
+  function checkBinary() {
+    const answer = document.getElementById('binaryAnswer').value.toUpperCase();
+    if (answer === 'DOOR') {
+      showMessage('binary-msg', 'BRANKAS TERBUKA!', 'success');
+      setTimeout(nextLevel, 2000);
+    } else {
+      showMessage('binary-msg', `Kode salah (Anda: ${answer}).`, 'error');
+    }
+  }
+  
+   // ============================================
+  // LEVEL 9: ARCHIVE SUDOKU
+  // ============================================
+  const SUDOKU_SIZE = 9;
+  const BOX_ROWS = 3;
+  const BOX_COLS = 3;
+  
+  const archiveInitial = [
+    [5,0,0,6,0,0,0,1,0],
+    [0,7,0,0,9,0,0,0,8],
+    [1,0,8,0,0,2,0,6,0],
+    [0,5,0,7,0,0,4,0,0],
+    [4,0,6,0,5,0,7,0,1],
+    [0,0,3,0,0,4,0,5,0],
+    [0,6,0,5,0,0,2,0,4],
+    [2,0,0,0,1,0,0,3,0],
+    [0,4,0,0,0,6,0,0,9]
+  ];
+  
+  function initArchive() {
+    const grid = document.getElementById('archiveGrid');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    gameState.archiveGrid = Array(SUDOKU_SIZE * SUDOKU_SIZE).fill('');
+  
+    for (let r = 0; r < SUDOKU_SIZE; r++) {
+      for (let c = 0; c < SUDOKU_SIZE; c++) {
+        const i = r * SUDOKU_SIZE + c;
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = i;
+  
+        if ((c + 1) % 3 === 0 && c !== SUDOKU_SIZE - 1) cell.classList.add('sub-right');
+        if ((r + 1) % 3 === 0 && r !== SUDOKU_SIZE - 1) cell.classList.add('sub-bottom');
+  
+        const val = archiveInitial[r][c];
+        if (val !== 0) {
+          cell.textContent = val;
+          cell.classList.add('fixed');
+          gameState.archiveGrid[i] = val.toString();
+        } else {
+          cell.contentEditable = true;
+          cell.addEventListener('input', () => handleArchiveInput(cell, i));
+        }
+  
+        grid.appendChild(cell);
+      }
+    }
+  }
+  
+  function handleArchiveInput(cell, index) {
+    let v = cell.textContent.trim();
+    if (v.length > 1) v = v.slice(0, 1);
+    const num = parseInt(v);
+    if (isNaN(num) || num < 1 || num > SUDOKU_SIZE) v = '';
+    cell.textContent = v;
+    gameState.archiveGrid[index] = v;
+  }
+  
+  function checkArchive() {
+    const N = SUDOKU_SIZE;
+    const g = gameState.archiveGrid.map(v => parseInt(v));
+  
+    if (g.some(isNaN)) {
+      showMessage('archive-msg', 'Masih ada sel kosong!', 'error');
+      return;
+    }
+  
+    for (let r = 0; r < N; r++) {
+      const set = new Set();
+      for (let c = 0; c < N; c++) set.add(g[r * N + c]);
+      if (set.size !== N) {
+        showMessage('archive-msg', 'Kesalahan pada BARIS!', 'error');
+        return;
+      }
+    }
+  
+    for (let c = 0; c < N; c++) {
+      const set = new Set();
+      for (let r = 0; r < N; r++) set.add(g[r * N + c]);
+      if (set.size !== N) {
+        showMessage('archive-msg', 'Kesalahan pada KOLOM!', 'error');
+        return;
+      }
+    }
+  
+    for (let br = 0; br < N; br += BOX_ROWS) {
+      for (let bc = 0; bc < N; bc += BOX_COLS) {
+        const set = new Set();
+        for (let r = 0; r < BOX_ROWS; r++) {
+          for (let c = 0; c < BOX_COLS; c++) {
+            set.add(g[(br + r) * N + (bc + c)]);
+          }
+        }
+        if (set.size !== N) {
+          showMessage('archive-msg', 'Kesalahan pada KOTAK 3×3!', 'error');
+          return;
+        }
+      }
+    }
+  
+    showMessage('archive-msg', 'ARSIP TERDEKRIPSI! Pola numerik valid.', 'success');
+    setTimeout(nextLevel, 2000);
+  }
+  
+  function resetArchive() {
+    initArchive();
+    showMessage('archive-msg', '', '');
+  }
+
+  
+  // ============================================
+  // LEVEL 10: LABORATORY LIGHTS OUT
+  // ============================================
+  function initLights() {
+    const grid = document.getElementById('lightsGrid');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    grid.style.setProperty('--cell-size', '70px');
+    gameState.lightsGrid = [1,0,1, 0,1,0, 1,0,1];
+    
+    const labels = ['A', 'B', 'C'];
+    
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.index = i;
+      
+      const row = Math.floor(i / 3);
+      const col = i % 3;
+      cell.textContent = labels[row] + (col + 1);
+      
+      cell.addEventListener('click', () => toggleLights(i));
+      updateLightCell(cell, i);
+      
+      grid.appendChild(cell);
+    }
+  }
+  
+  function toggleLights(index) {
+    const row = Math.floor(index / 3);
+    const col = index % 3;
+    
+    gameState.lightsGrid[index] = 1 - gameState.lightsGrid[index];
+    
+    const neighbors = [
+      index - 3,
+      index + 3,
+      col > 0 ? index - 1 : -1,
+      col < 2 ? index + 1 : -1
+    ];
+    
+    neighbors.forEach(n => {
+      if (n >= 0 && n < 9) {
+        gameState.lightsGrid[n] = 1 - gameState.lightsGrid[n];
+      }
+    });
+    
+    document.querySelectorAll('#lightsGrid .cell').forEach((cell, i) => {
+      updateLightCell(cell, i);
+    });
+    
+    if (gameState.lightsGrid.every(v => v === 0)) {
+      showMessage('lights-msg', 'BIOHAZARD CLEARED!', 'success');
+      setTimeout(nextLevel, 2000);
+    }
+  }
+  
+  function updateLightCell(cell, index) {
+    if (gameState.lightsGrid[index] === 1) {
+      cell.classList.add('red');
+      cell.classList.remove('green');
+    } else {
+      cell.classList.add('green');
+      cell.classList.remove('red');
+    }
+  }
+  
+  function resetLights() {
+    initLights();
+    showMessage('lights-msg', '', '');
+  }
+  
+  // ============================================
+  // VICTORY SCREEN
+  // ============================================
+  function showVictory() {
+    showScreen('victory');
+  }
+  
+  // Initialize on load
+  window.addEventListener('DOMContentLoaded', init);
+  </script>
+
+</body>
+</html>
